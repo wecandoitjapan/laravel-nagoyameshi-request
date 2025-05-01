@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Admin;
 use App\Models\User;
+use App\Models\Restaurant;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -22,11 +23,11 @@ class RestaurantTest extends TestCase
     }
 
     // ログイン済みの一般ユーザーは会員側の店舗一覧ページにアクセスできる
-    public function test_user_can_access_restaurants_index()
+    public function test_guest_can_access_restaurants_show()
     {
-        $user = User::factory()->create();
+        $restaurant = Restaurant::factory()->create();
 
-        $response = $this->actingAs($user)->get(route('restaurants.index'));
+        $response = $this->get(route('restaurants.show', $restaurant));
 
         $response->assertStatus(200);
     }
@@ -43,4 +44,31 @@ class RestaurantTest extends TestCase
 
         $response->assertRedirect(route('admin.home'));
     }
+
+    // ログイン済みの一般ユーザーは会員側の店舗詳細ページにアクセスできる
+    public function test_user_can_access_restaurants_show()
+    {
+      $user = User::factory()->create();
+
+      $restaurant = Restaurant::factory()->create();
+
+      $response = $this->actingAs($user)->get(route('restaurants.show', $restaurant));
+
+      $response->assertStatus(200);
+  }
+
+  // ログイン済みの管理者は会員側の店舗詳細ページにアクセスできない
+  public function test_admin_cannot_access_restaurants_show()
+  {
+      $admin = new Admin();
+      $admin->email = 'admin@example.com';
+      $admin->password = Hash::make('nagoyameshi');
+      $admin->save();
+
+      $restaurant = Restaurant::factory()->create();
+
+      $response = $this->actingAs($admin, 'admin')->get(route('restaurants.show', $restaurant));
+
+      $response->assertRedirect(route('admin.home'));
+  }
 }
