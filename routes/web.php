@@ -8,6 +8,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RestaurantController;
 use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\ReviewController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,13 +21,17 @@ use App\Http\Controllers\SubscriptionController;
 |
 */
 
+// ゲスト状態のときだけアクセスを許可する
 Route::group(['middleware' => 'guest:admin'], function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
 
     Route::resource('restaurants', RestaurantController::class)->only(['index', 'show']);
 
+    // ログイン済みかつメール認証済みのユーザーだけがアクセスできる
     Route::group(['middleware' => ['auth', 'verified']], function () {
         Route::resource('user', UserController::class)->only(['index', 'edit', 'update']);
+
+        Route::resource('restaurants.reviews', ReviewController::class)->only(['index']);
 
         // まだサブスクリプションに加入していないユーザーだけがアクセスできるルート
         Route::group(['middleware' => [NotSubscribed::class]], function () {
@@ -46,6 +51,8 @@ Route::group(['middleware' => 'guest:admin'], function () {
             Route::get('subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
             // 実際にサブスクリプションを解約
             Route::delete('subscription', [SubscriptionController::class, 'destroy'])->name('subscription.destroy');
+
+            Route::resource('restaurants.reviews', ReviewController::class)->only(['create', 'store', 'edit', 'update', 'destroy']);
         });
     });
 });
